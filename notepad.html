@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Filing System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        .folder, .file {
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .folder {
+            background-color: #f0f0f0;
+        }
+        .file {
+            background-color: #e0f7fa;
+        }
+        .actions {
+            margin-top: 10px;
+        }
+        .actions button {
+            margin-right: 5px;
+        }
+        .bookmark {
+            margin-left: 10px;
+        }
+        .bookmark.active {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Filing System</h1>
+        <div>
+            <input type="text" id="folderName" placeholder="New Folder Name">
+            <input type="color" id="folderColor" value="#f0f0f0">
+            <button onclick="createFolder()">Create Folder</button>
+        </div>
+        <div id="folders"></div>
+    </div>
+
+    <script>
+        let folders = JSON.parse(localStorage.getItem('folders')) || {};
+
+        function createFolder() {
+            const folderName = document.getElementById('folderName').value.trim();
+            const folderColor = document.getElementById('folderColor').value;
+            if (folderName && !folders[folderName]) {
+                folders[folderName] = { color: folderColor, files: [], bookmarked: false };
+                saveAndRenderFolders();
+                document.getElementById('folderName').value = '';
+            }
+        }
+
+        function createFile(folderName) {
+            const fileName = prompt('Enter file name:');
+            const tag = prompt('Enter file tag:');
+            if (fileName) {
+                folders[folderName].files.push({ name: fileName, tag: tag });
+                saveAndRenderFolders();
+            }
+        }
+
+        function deleteFolder(folderName) {
+            delete folders[folderName];
+            saveAndRenderFolders();
+        }
+
+        function deleteFile(folderName, fileName) {
+            folders[folderName].files = folders[folderName].files.filter(file => file.name !== fileName);
+            saveAndRenderFolders();
+        }
+
+        function toggleBookmark(folderName) {
+            folders[folderName].bookmarked = !folders[folderName].bookmarked;
+            saveAndRenderFolders();
+        }
+
+        function saveAndRenderFolders() {
+            localStorage.setItem('folders', JSON.stringify(folders));
+            renderFolders();
+        }
+
+        function renderFolders() {
+            const folderContainer = document.getElementById('folders');
+            folderContainer.innerHTML = '';
+            for (const folderName in folders) {
+                const folder = folders[folderName];
+                const folderDiv = document.createElement('div');
+                folderDiv.className = 'folder';
+                folderDiv.style.backgroundColor = folder.color;
+                folderDiv.innerHTML = `
+                    <strong>${folderName}</strong>
+                    <button class="bookmark ${folder.bookmarked ? 'active' : ''}" onclick="toggleBookmark('${folderName}')">Bookmark</button>
+                    <div class="actions">
+                        <button onclick="createFile('${folderName}')">Add File</button>
+                        <button onclick="deleteFolder('${folderName}')">Delete Folder</button>
+                    </div>
+                    <div>${folder.files.map(file => `
+                        <div class="file">
+                            ${file.name} (${file.tag}) <button onclick="deleteFile('${folderName}', '${file.name}')">Delete</button>
+                        </div>`).join('')}
+                    </div>
+                `;
+                folderContainer.appendChild(folderDiv);
+            }
+        }
+
+        // Initial render
+        renderFolders();
+    </script>
+</body>
+</html>
